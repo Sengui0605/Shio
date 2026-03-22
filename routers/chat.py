@@ -116,6 +116,10 @@ async def chat_stream(data: ChatRequest, _=Depends(verify_pin)):
     messages = await get_messages_db(session_id)
     if not messages:
         await save_conversation_db(session_id, data.user_id or "default_user", data.msg[:50], datetime.now().isoformat())
+    else:
+        from database import check_conversation_ownership
+        if not await check_conversation_ownership(session_id, data.user_id):
+            raise HTTPException(status_code=403, detail="No tienes acceso a esta conversación")
     await save_message_db(session_id, "user", data.msg, datetime.now().isoformat())
     all_msgs, videos_list, search_prefix, _ = await _build_context(data)
 
@@ -146,6 +150,10 @@ async def chat_post(data: ChatRequest, _=Depends(verify_pin)):
     messages = await get_messages_db(session_id)
     if not messages:
         await save_conversation_db(session_id, data.user_id or "default_user", data.msg[:50], datetime.now().isoformat())
+    else:
+        from database import check_conversation_ownership
+        if not await check_conversation_ownership(session_id, data.user_id):
+            raise HTTPException(status_code=403, detail="No tienes acceso a esta conversación")
     await save_message_db(session_id, "user", data.msg, datetime.now().isoformat())
     all_msgs, videos_list, search_prefix, _ = await _build_context(data)
     try:
