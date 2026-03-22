@@ -470,7 +470,7 @@ async function handleFileUpload(file) {
   const fd = new FormData(); fd.append("file", file);
   showToast(`Subiendo: ${file.name}…`, "info");
   try {
-    const r = await fetch(`${API_BASE}/upload`, { method: "POST", body: fd, headers: { Authorization: "Bearer " + AUTH_PIN } });
+    const r = await fetch(`${API_BASE}/upload`, { method: "POST", body: fd, headers: { Authorization: "Bearer " + AUTH_TOKEN } });
     const data = await r.json();
     if (data.error) { showToast(data.error, "error"); return; }
     attachedFiles.push({ name: data.filename || file.name, text: data.text, size: file.size });
