@@ -6,7 +6,7 @@ import uuid
 router = APIRouter(tags=["History"])
 
 @router.get("/history")
-async def get_history(user_id: str | None = None, _=Depends(verify_pin)):
+async def get_history(user_id: str, _=Depends(verify_pin)):
     rows = await get_all_history_db(user_id)
     return [dict(r) for r in rows]
 
