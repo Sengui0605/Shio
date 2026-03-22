@@ -25,8 +25,10 @@ def chunk_text(text: str, chunk_size: int = 500) -> list[str]:
         chunks.append(" ".join(current))
     return chunks
 
+import asyncio
+
 def index_document(text: str, source: str):
-    """Indexa un documento dividiéndolo en chunks"""
+    """Indexa un documento dividiéndolo en chunks (sincrónico para uso interno)"""
     chunks = chunk_text(text)
     collection.add(
         documents=chunks,
@@ -34,9 +36,14 @@ def index_document(text: str, source: str):
         metadatas=[{"source": source}] * len(chunks)
     )
 
-def search(query: str, top_k: int = 3):
-    """Busca los fragmentos más similares a la consulta"""
-    results = collection.query(
+async def index_document_async(text: str, source: str):
+    """Indexa un documento de forma asíncrona"""
+    await asyncio.to_thread(index_document, text, source)
+
+async def search(query: str, top_k: int = 3):
+    """Busca los fragmentos más similares a la consulta de forma asíncrona"""
+    results = await asyncio.to_thread(
+        collection.query,
         query_texts=[query],
         n_results=top_k
     )

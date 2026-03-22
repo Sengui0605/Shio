@@ -40,10 +40,14 @@ async def _build_context(data):
     search_prefix = ""
 
     if is_news:
-        news = get_latest_news()
-        if news:
+        news_list = []
+        try:
+            news_list = await get_latest_news()
+        except Exception as e:
+            log.error(f"Error al obtener noticias: {e}")
+        if news_list:
             context_search = "### NOTICIAS GLOBALES DEL DÍA:\n"
-            for n in news:
+            for n in news_list:
                 context_search += f"- {n['title']} (Fuente: {n['source']}, Link: {n['link']})\n"
             context_search += "\nResume estas noticias de forma breve y amena en español.\n"
         else:
@@ -79,7 +83,7 @@ async def _build_context(data):
     rag_context = ""
     try:
         if rag_collection.count() > 0:
-            rag_results = rag_search(data.msg, top_k=3)
+            rag_results = await rag_search(data.msg, top_k=3)
             if rag_results:
                 rag_context = "### CONTEXTO DE DOCUMENTOS:\n"
                 for chunk in rag_results:

@@ -1,38 +1,36 @@
-import logging
+import asyncio
 from duckduckgo_search import DDGS
 
 logger = logging.getLogger("shio")
 
 async def search_youtube_videos(query: str):
     """
-    Busca videos usando la librería duckduckgo-search, 
-    que es más robusta en entornos cloud como Hugging Face.
+    Busca videos usando la librería duckduckgo-search (No bloqueante).
     """
+    def _sync_search():
+        with DDGS() as ddgs:
+            full_query = f"{query} site:youtube.com"
+            return list(ddgs.videos(full_query, max_results=5))
+
     try:
         videos = []
-        # Usamos DDGS para buscar videos filtrando por YouTube si es posible
-        with DDGS() as ddgs:
-            # Añadimos "site:youtube.com" para asegurar resultados de YT
-            full_query = f"{query} site:youtube.com"
-            results = ddgs.videos(full_query, max_results=5)
+        results = await asyncio.to_thread(_sync_search)
+        
+        for r in results:
+            vid_url = r.get('content') or r.get('video') or r.get('url')
+            video_id = ""
+            if "v=" in vid_url:
+                video_id = vid_url.split("v=")[1].split("&")[0]
+            elif "embed/" in vid_url:
+                video_id = vid_url.split("embed/")[1].split("?")[0]
             
-            for r in results:
-                # DDGS devuelve: title, embed_url, video, image, duration, publisher, etc.
-                vid_url = r.get('content') or r.get('video') or r.get('url')
-                # Intentar extraer ID para la miniatura si no viene
-                video_id = ""
-                if "v=" in vid_url:
-                    video_id = vid_url.split("v=")[1].split("&")[0]
-                elif "embed/" in vid_url:
-                    video_id = vid_url.split("embed/")[1].split("?")[0]
-                
-                videos.append({
-                    "id": video_id,
-                    "url": vid_url,
-                    "embed_url": r.get('embed_url') or f"https://www.youtube.com/embed/{video_id}" if video_id else vid_url,
-                    "thumbnail": r.get('images', {}).get('medium') or r.get('image') or (f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg" if video_id else ""),
-                    "title": r.get('title', 'Video sin título')
-                })
+            videos.append({
+                "id": video_id,
+                "url": vid_url,
+                "embed_url": r.get('embed_url') or f"https://www.youtube.com/embed/{video_id}" if video_id else vid_url,
+                "thumbnail": r.get('images', {}).get('medium') or r.get('image') or (f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg" if video_id else ""),
+                "title": r.get('title', 'Video sin título')
+            })
         
         return videos
             

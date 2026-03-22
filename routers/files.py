@@ -3,7 +3,7 @@ import os
 import uuid
 from services.stt import transcribe_audio
 from services.file_parser import extract_text_from_file
-from services.rag import index_document, collection
+from services.rag import index_document_async, collection
 from models.schemas import RagIndexRequest
 
 router = APIRouter(tags=["Files & RAG"])
@@ -54,7 +54,7 @@ async def rag_index(data: RagIndexRequest):
             fpath = os.path.join(root, fname)
             text = extract_text_from_file(fpath, fname)
             if text:
-                index_document(text, fpath)
+                await index_document_async(text, fpath)
                 file_count += 1
 
     return {"ok": True, "files": file_count}
