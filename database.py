@@ -16,6 +16,11 @@ async def init_db():
             created TEXT
         )
         """)
+        # Migración: asegurar que user_id existe
+        try:
+            await db.execute("ALTER TABLE conversations ADD COLUMN user_id TEXT")
+        except:
+            pass # Ya existe
         
         await db.execute("""
         CREATE TABLE IF NOT EXISTS messages (

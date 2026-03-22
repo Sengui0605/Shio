@@ -1,5 +1,6 @@
 import chromadb
 import os
+import asyncio
 
 # Directorio para persistencia de ChromaDB
 CHROMA_PATH = "data/chroma"
@@ -25,26 +26,56 @@ def chunk_text(text: str, chunk_size: int = 500) -> list[str]:
         chunks.append(" ".join(current))
     return chunks
 
-import asyncio
+import httpx
+from config import settings
 
-def index_document(text: str, source: str):
-    """Indexa un documento dividiéndolo en chunks (sincrónico para uso interno)"""
-    chunks = chunk_text(text)
-    collection.add(
-        documents=chunks,
-        ids=[f"{source}_{i}" for i in range(len(chunks))],
-        metadatas=[{"source": source}] * len(chunks)
-    )
+async def generate_embeddings(texts: list[str]) -> list[list[float]]:
+    """Genera embeddings usando Ollama Cloud"""
+    host = settings.ollama_host.rstrip('/')
+    url = f"{host}/api/embed"
+    api_key = (settings.cloud_api_key or "").strip()
+    
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    payload = {
+        "model": settings.embed_model,
+        "input": texts
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(url, headers=headers, json=payload)
+            if response.status_code != 200:
+                return []
+            return response.json().get("embeddings", [])
+    except Exception:
+        return []
 
 async def index_document_async(text: str, source: str):
-    """Indexa un documento de forma asíncrona"""
-    await asyncio.to_thread(index_document, text, source)
+    """Indexa un documento de forma asíncrona usando embeddings de Ollama"""
+    chunks = chunk_text(text)
+    embeddings = await generate_embeddings(chunks)
+    
+    if embeddings:
+        await asyncio.to_thread(
+            collection.add,
+            documents=chunks,
+            embeddings=embeddings,
+            ids=[f"{source}_{i}" for i in range(len(chunks))],
+            metadatas=[{"source": source}] * len(chunks)
+        )
 
 async def search(query: str, top_k: int = 3):
-    """Busca los fragmentos más similares a la consulta de forma asíncrona"""
+    """Busca los fragmentos más similares usando embeddings de Ollama"""
+    query_vecs = await generate_embeddings([query])
+    if not query_vecs:
+        return []
+        
     results = await asyncio.to_thread(
         collection.query,
-        query_texts=[query],
+        query_embeddings=query_vecs,
         n_results=top_k
     )
     if results["documents"]:

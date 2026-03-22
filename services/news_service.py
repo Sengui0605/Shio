@@ -31,6 +31,6 @@ async def get_latest_news():
 
 if __name__ == "__main__":
     # Prueba rápida
-    news = get_latest_news()
+    news = asyncio.run(get_latest_news())
     for i, n in enumerate(news, 1):
         print(f"{i}. {n['title']} ({n['source']})")

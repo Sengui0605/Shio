@@ -12,15 +12,20 @@ from services.news_service import get_latest_news
 from services.video_service import search_youtube_videos
 from services.rag import search as rag_search, collection as rag_collection
 from database import save_conversation_db, save_message_db, get_messages_db
-from services.auth import verify_pin
+from services.auth import verify_token
+from services.rate_limiter import limiter
+from fastapi import Request
 
 log = logging.getLogger("shio")
 router = APIRouter(tags=["Chat"])
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROMPT_FILE = os.path.join(BASE_DIR, "prompt.txt")
+
 def _load_prompt():
     try:
-        if os.path.exists("prompt.txt"):
-            with open("prompt.txt", "r", encoding="utf-8") as f:
+        if os.path.exists(PROMPT_FILE):
+            with open(PROMPT_FILE, "r", encoding="utf-8") as f:
                 return f.read().strip()
     except Exception as e:
         log.error(f"Error leyendo prompt.txt: {e}")
@@ -28,8 +33,8 @@ def _load_prompt():
 
 async def _build_context(data):
     msg_clean = data.msg.strip()
-    msg_lower = msg_clean.lower()
-    trigger_words = ["busca", "buscar", "search", "quien es", "que es"]
+    msg_lower = msg_clean.lower().lstrip("¿¡")
+    trigger_words = ["busca", "buscar", "search", "quien es", "que es", "quién es", "qué es"]
     triggered_word = next((w for w in trigger_words if msg_lower.startswith(w)), None)
     is_search = triggered_word is not None
     is_news = msg_lower == "noticias"
@@ -80,6 +85,8 @@ async def _build_context(data):
                 log.error(f"Error búsqueda: {e}")
 
     messages = await get_messages_db(data.session_id or "")
+    # Evitar desbordar el contexto del modelo
+    messages = messages[-40:]
 
     rag_context = ""
     try:
@@ -110,7 +117,8 @@ async def _build_context(data):
     return all_msgs, videos_list, search_prefix, messages
 
 @router.post("/chat/stream")
-async def chat_stream(data: ChatRequest, _=Depends(verify_pin)):
+@limiter.limit("20/minute")
+async def chat_stream(request: Request, data: ChatRequest, _=Depends(verify_token)):
     session_id = data.session_id or str(uuid.uuid4())
     data.session_id = session_id
     messages = await get_messages_db(session_id)
@@ -144,7 +152,8 @@ async def chat_stream(data: ChatRequest, _=Depends(verify_pin)):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 @router.post("/chat")
-async def chat_post(data: ChatRequest, _=Depends(verify_pin)):
+@limiter.limit("20/minute")
+async def chat_post(request: Request, data: ChatRequest, _=Depends(verify_token)):
     session_id = data.session_id or str(uuid.uuid4())
     data.session_id = session_id
     messages = await get_messages_db(session_id)

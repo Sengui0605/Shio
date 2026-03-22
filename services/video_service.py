@@ -10,7 +10,7 @@ async def search_youtube_videos(query: str):
     """
     def _sync_search():
         with DDGS() as ddgs:
-            full_query = f"{query} site:youtube.com"
+            full_query = query
             return list(ddgs.videos(full_query, max_results=5))
 
     try:

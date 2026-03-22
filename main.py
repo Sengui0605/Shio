@@ -7,11 +7,15 @@ from services.config_manager import get_runtime_config
 import os
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+from services.rate_limiter import limiter
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 app = FastAPI(title="Shio AI API")
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Servir archivos estáticos
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

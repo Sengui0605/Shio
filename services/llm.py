@@ -1,6 +1,7 @@
 import httpx
 import logging
 import json
+import asyncio
 from config import settings
 
 async def generate_response(messages: list[dict], model: str | None = None, temperature: float = 0.2) -> str:
@@ -21,9 +22,9 @@ async def generate_response(messages: list[dict], model: str | None = None, temp
         headers["Authorization"] = f"Bearer {api_key}"
         key_str = str(api_key)
         masked_key = f"{key_str[:6]}...{key_str[-6:]}" if len(key_str) > 12 else "****"
-        print(f"[DEBUG] Request a {url} | Key: {masked_key} | Model: {selected_model}")
+        logging.debug(f"Request a {url} | Key: {masked_key} | Model: {selected_model}")
     else:
-        print(f"[DEBUG] Request a {url} SIN API KEY")
+        logging.debug(f"Request a {url} SIN API KEY")
 
     payload = {
         "model": selected_model,
@@ -36,18 +37,19 @@ async def generate_response(messages: list[dict], model: str | None = None, temp
     }
 
     try:
-        async with httpx.AsyncClient(timeout=120.0, follow_redirects=True) as client:
+        transport = httpx.AsyncHTTPTransport(retries=2)
+        async with httpx.AsyncClient(timeout=120.0, follow_redirects=True, transport=transport) as client:
             response = await client.post(url, headers=headers, json=payload)
             
             if response.status_code == 401:
                 key_str = str(api_key)
                 key_info = f"({key_str[:4]}...{key_str[-4:]})" if key_str else "(VACÍA)"
-                print(f"[ERROR] 401 Unauthorized | Key local: {key_info} | URL: {url}")
-                return f"VERSIÓN DEBUG 2 - Error: No autorizado (401). El servidor rechazó la llave {key_info}. Verifica tu Cloud API Key en Configuración."
+                logging.error(f"401 Unauthorized | Key local: {key_info} | URL: {url}")
+                return f"Error: No autorizado (401). Verifica tu Cloud API Key."
             
             if response.status_code != 200:
-                print(f"[ERROR] Status {response.status_code} | Body: {response.text}")
-                return f"Error del servidor Ollama ({response.status_code}): {response.text}"
+                logging.error(f"Status {response.status_code} | Body: {response.text}")
+                return f"Error del servidor Ollama ({response.status_code})"
 
             data = response.json()
             message = data.get("message", {})
@@ -98,9 +100,14 @@ async def generate_response_stream(messages: list[dict], model: str = None, temp
                         data = json.loads(line)
                         if data.get("done"):
                             break
-                        content = data.get("message", {}).get("content", "")
-                        if content:
-                            yield f"data: {json.dumps({'type': 'text', 'text': content}, ensure_ascii=False)}\n\n"
+                        
+                        message = data.get("message", {})
+                        content = message.get("content", "")
+                        thinking = message.get("thinking", "")
+                        
+                        chunk_text = content or thinking
+                        if chunk_text:
+                            yield f"data: {json.dumps({'type': 'text', 'text': chunk_text}, ensure_ascii=False)}\n\n"
                     except Exception as e:
                         logging.error(f"Error parseando streaming chunk: {e}")
                         continue

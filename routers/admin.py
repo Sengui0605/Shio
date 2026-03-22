@@ -10,7 +10,7 @@ from models.schemas import AuthRequest, PromptUpdate, RuntimeConfig
 from config import settings
 from services.config_manager import get_runtime_config, save_runtime_config
 from services.logger import log_buffer
-from services.auth import verify_pin
+from services.auth import verify_token, create_access_token
 import os
 import json
 import httpx
@@ -23,12 +23,13 @@ router = APIRouter(tags=["Admin"])
 
 @router.post("/auth")
 async def auth(data: AuthRequest):
-    if data.pin == settings.pin:
-        return {"ok": True, "pin": data.pin}
+    if str(data.pin) == str(settings.pin):
+        token = create_access_token({"sub": "admin"})
+        return {"ok": True, "token": token}
     raise HTTPException(status_code=401, detail="PIN incorrecto")
 
 @router.get("/prompt")
-async def get_prompt(_=Depends(verify_pin)):
+async def get_prompt(_=Depends(verify_token)):
     prompt = ""
     if os.path.exists(PROMPT_FILE):
         with open(PROMPT_FILE, "r", encoding="utf-8") as f:
@@ -36,13 +37,13 @@ async def get_prompt(_=Depends(verify_pin)):
     return {"prompt": prompt}
 
 @router.post("/prompt")
-async def save_prompt(data: PromptUpdate, _=Depends(verify_pin)):
+async def save_prompt(data: PromptUpdate, _=Depends(verify_token)):
     with open(PROMPT_FILE, "w", encoding="utf-8") as f:
         f.write(data.prompt)
     return {"ok": True}
 
 @router.post("/imagenes")
-async def imagenes(data: dict = Body(...), cantidad: int = 18, _=Depends(verify_pin)):
+async def imagenes(data: dict = Body(...), cantidad: int = 18, _=Depends(verify_token)):
     tema = data.get("tema", "")
     if not tema:
         return {"error": "Debes indicar un tema"}
@@ -72,11 +73,11 @@ async def imagenes(data: dict = Body(...), cantidad: int = 18, _=Depends(verify_
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/config")
-async def get_config(_=Depends(verify_pin)):
+async def get_config(_=Depends(verify_token)):
     return get_runtime_config()
 
 @router.post("/config")
-async def save_config(data: RuntimeConfig, _=Depends(verify_pin)):
+async def save_config(data: RuntimeConfig, _=Depends(verify_token)):
     save_runtime_config(data.model_dump())
     return {"ok": True}
 

@@ -3,7 +3,7 @@ const API_BASE = "";
 let currentSessionId = null;
 let bloqueado = false;
 let typingAnimationId = null;
-let AUTH_PIN = sessionStorage.getItem("shio_pin") || "";
+let AUTH_TOKEN = sessionStorage.getItem("shio_token") || "";
 let USER_ID = localStorage.getItem("shio_user_id");
 if (!USER_ID) {
   USER_ID = crypto.randomUUID();
@@ -47,7 +47,7 @@ marked.parse = function(text, opts, cb) {
 
 // ── AUTH ──
 function authHeaders() {
-  return { "Content-Type": "application/json", Authorization: "Bearer " + AUTH_PIN };
+  return { "Content-Type": "application/json", Authorization: "Bearer " + AUTH_TOKEN };
 }
 
 async function tryLogin() {
@@ -60,8 +60,9 @@ async function tryLogin() {
       body: JSON.stringify({ pin }),
     });
     if (r.ok) {
-      AUTH_PIN = pin;
-      sessionStorage.setItem("shio_pin", pin);
+      const data = await r.json();
+      AUTH_TOKEN = data.token;
+      sessionStorage.setItem("shio_token", AUTH_TOKEN);
       document.getElementById("loginScreen").style.display = "none";
       initApp();
     } else {
@@ -72,9 +73,9 @@ async function tryLogin() {
 }
 
 async function checkAuth() {
-  if (!AUTH_PIN) { document.getElementById("loginScreen").style.display = "flex"; return; }
+  if (!AUTH_TOKEN) { document.getElementById("loginScreen").style.display = "flex"; return; }
   try {
-    const r = await fetch(`${API_BASE}/health`, { headers: { Authorization: "Bearer " + AUTH_PIN } });
+    const r = await fetch(`${API_BASE}/health`, { headers: { Authorization: "Bearer " + AUTH_TOKEN } });
     if (r.ok) { document.getElementById("loginScreen").style.display = "none"; initApp(); }
     else document.getElementById("loginScreen").style.display = "flex";
   } catch { document.getElementById("loginScreen").style.display = "flex"; }
@@ -170,7 +171,7 @@ async function checkConnection() {
   const dot = document.getElementById("statusDot");
   const label = document.getElementById("statusLabel");
   try {
-    const r = await fetch(`${API_BASE}/health`, { headers: { Authorization: "Bearer " + AUTH_PIN }, signal: AbortSignal.timeout(5000) });
+    const r = await fetch(`${API_BASE}/health`, { headers: { Authorization: "Bearer " + AUTH_TOKEN }, signal: AbortSignal.timeout(5000) });
     if (r.ok) {
       dot.className = "status-dot online";
       label.className = "status-label online";
@@ -435,7 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunks, { type: "audio/wav" });
         const fd = new FormData(); fd.append("file", blob, "voz.wav");
-        const r = await fetch(`${API_BASE}/stt`, { method: "POST", body: fd, headers: { Authorization: "Bearer " + AUTH_PIN } });
+        const r = await fetch(`${API_BASE}/stt`, { method: "POST", body: fd, headers: { Authorization: "Bearer " + AUTH_TOKEN } });
         document.getElementById("msg").value = (await r.json()).text;
         enviar();
       };
@@ -561,7 +562,7 @@ async function saveRuntimeConfig() {
   };
   try {
     await fetch(`${API_BASE}/config`, { method: "POST", headers: authHeaders(), body: JSON.stringify(data) });
-    if (data.pin && data.pin !== AUTH_PIN) { AUTH_PIN = data.pin; sessionStorage.setItem("shio_pin", data.pin); }
+    if (data.pin) { /* El PIN cambió en el servidor, pero el token sigue siendo válido hasta que expire o se reloggee */ }
     showToast("Configuración guardada ✓", "success");
     document.getElementById("settingsModal").style.display = "none";
   } catch { showToast("Error guardando configuración", "error"); }
