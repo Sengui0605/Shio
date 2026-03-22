@@ -4,11 +4,6 @@ let currentSessionId = null;
 let bloqueado = false;
 let typingAnimationId = null;
 let AUTH_PIN = sessionStorage.getItem("shio_pin") || "";
-let USER_ID = localStorage.getItem("shio_user_id");
-if (!USER_ID) {
-  USER_ID = crypto.randomUUID();
-  localStorage.setItem("shio_user_id", USER_ID);
-}
 let particleCanvas, particleCtx, particles = [];
 
 // ── MARKED & HIGHLIGHT.JS ──
@@ -188,7 +183,7 @@ async function loadHistory() {
   const list = document.getElementById("historyList");
   if (!list) return;
   try {
-    const r = await fetch(`${API_BASE}/history?user_id=${USER_ID}`, { headers: authHeaders() });
+    const r = await fetch(`${API_BASE}/history`, { headers: authHeaders() });
     const data = await r.json();
     list.innerHTML = "";
     data.forEach(conv => {
@@ -355,7 +350,7 @@ async function enviar() {
 
   try {
     const payload = {
-      msg, user_id: USER_ID, session_id: currentSessionId,
+      msg, session_id: currentSessionId,
       file_context: combinedContext || null,
       model: currentModel || null,
       temperature: currentTemp ?? 0.2,

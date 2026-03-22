@@ -3,6 +3,7 @@ from typing import Optional
 
 class ChatRequest(BaseModel):
     msg: str
+    user_id: Optional[str] = None
     session_id: Optional[str] = None
     file_context: Optional[str] = None
     model: Optional[str] = None

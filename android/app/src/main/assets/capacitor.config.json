@@ -1,0 +1,9 @@
+{
+	"appId": "com.senjiro.shioai",
+	"appName": "Shio AI",
+	"webDir": "static",
+	"server": {
+		"url": "https://sengui0605-shio-ai-assistant.hf.space",
+		"cleartext": false
+	}
+}
