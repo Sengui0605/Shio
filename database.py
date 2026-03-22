@@ -70,3 +70,10 @@ async def rename_conversation_db(conv_id: str, new_title: str):
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("UPDATE conversations SET title = ? WHERE id = ?", (new_title, conv_id))
         await db.commit()
+
+async def check_conversation_ownership(conv_id: str, user_id: str) -> bool:
+    """Verifica si una conversación pertenece a un usuario específico"""
+    async with aiosqlite.connect(DB_PATH) as db:
+        async with db.execute("SELECT 1 FROM conversations WHERE id = ? AND user_id = ?", (conv_id, user_id)) as cursor:
+            row = await cursor.fetchone()
+            return row is not None

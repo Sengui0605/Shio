@@ -199,9 +199,11 @@ async function loadHistory() {
       item.ondblclick = e => { if (e.target.closest(".history-delete")) return; e.stopPropagation(); startRename(item, conv.id, conv.title); };
       item.querySelector(".history-delete").onclick = async e => {
         e.stopPropagation();
-        await fetch(`${API_BASE}/history/${conv.id}`, { method: "DELETE", headers: authHeaders() });
+        if (confirm(`¿Borrar conversación "${conv.title}"?`)) {
+        await fetch(`${API_BASE}/history/${conv.id}?user_id=${USER_ID}`, { method: "DELETE", headers: authHeaders() });
         if (currentSessionId === conv.id) { currentSessionId = null; document.getElementById("chat").innerHTML = ""; showWelcome(); }
         loadHistory();
+        }
       };
       list.appendChild(item);
     });
@@ -220,9 +222,11 @@ function startRename(item, id, oldTitle) {
   input.focus(); input.select();
   const save = async () => {
     if (saved) return; saved = true;
-    const newTitle = input.value.trim() || oldTitle;
-    await fetch(`${API_BASE}/history/${id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ title: newTitle }) });
+    const newTitle = prompt("Nuevo título:", oldTitle);
+  if (newTitle) {
+    await fetch(`${API_BASE}/history/${id}?user_id=${USER_ID}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ title: newTitle }) });
     loadHistory();
+  }
   };
   input.onblur = save;
   input.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); save(); } if (e.key === "Escape") loadHistory(); };
@@ -230,7 +234,7 @@ function startRename(item, id, oldTitle) {
 
 async function loadConversation(id) {
   try {
-    const r = await fetch(`${API_BASE}/history/${id}`, { headers: authHeaders() });
+    const r = await fetch(`${API_BASE}/history/${id}?user_id=${USER_ID}`, { headers: authHeaders() });
     const conv = await r.json();
     if (conv.error) return;
     currentSessionId = id;

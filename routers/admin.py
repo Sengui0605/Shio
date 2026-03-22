@@ -5,14 +5,15 @@ else:
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PROMPT_FILE = os.path.join(BASE_DIR, "prompt.txt")
-from fastapi import APIRouter, HTTPException, Body, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, Body, WebSocket, WebSocketDisconnect, Depends
 from models.schemas import AuthRequest, PromptUpdate, RuntimeConfig
 from config import settings
 from services.config_manager import get_runtime_config, save_runtime_config
 from services.logger import log_buffer
+from services.auth import verify_pin
 import os
 import json
-import requests
+import httpx
 from bs4 import BeautifulSoup
 import random
 
@@ -27,7 +28,7 @@ async def auth(data: AuthRequest):
     raise HTTPException(status_code=401, detail="PIN incorrecto")
 
 @router.get("/prompt")
-async def get_prompt():
+async def get_prompt(_=Depends(verify_pin)):
     prompt = ""
     if os.path.exists(PROMPT_FILE):
         with open(PROMPT_FILE, "r", encoding="utf-8") as f:
@@ -35,13 +36,13 @@ async def get_prompt():
     return {"prompt": prompt}
 
 @router.post("/prompt")
-async def save_prompt(data: PromptUpdate):
+async def save_prompt(data: PromptUpdate, _=Depends(verify_pin)):
     with open(PROMPT_FILE, "w", encoding="utf-8") as f:
         f.write(data.prompt)
     return {"ok": True}
 
 @router.post("/imagenes")
-async def imagenes(data: dict = Body(...), cantidad: int = 18):
+async def imagenes(data: dict = Body(...), cantidad: int = 18, _=Depends(verify_pin)):
     tema = data.get("tema", "")
     if not tema:
         return {"error": "Debes indicar un tema"}
@@ -51,30 +52,31 @@ async def imagenes(data: dict = Body(...), cantidad: int = 18):
     headers = {"User-Agent": "Mozilla/5.0"}
     
     try:
-        resp = requests.get(url, headers=headers)
-        soup = BeautifulSoup(resp.text, "html.parser")
-        imgs = []
-        for a in soup.find_all("a", {"class": "iusc"}):
-            m_json = a.get("m")
-            if m_json:
-                try:
-                    m_data = json.loads(m_json)
-                    img_url = m_data.get("murl")
-                    if img_url:
-                        imgs.append(img_url)
-                except:
-                    continue
-        random.shuffle(imgs)
-        return {"imagenes": imgs[:cantidad]}
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url, headers=headers)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            imgs = []
+            for a in soup.find_all("a", {"class": "iusc"}):
+                m_json = a.get("m")
+                if m_json:
+                    try:
+                        m_data = json.loads(m_json)
+                        img_url = m_data.get("murl")
+                        if img_url:
+                            imgs.append(img_url)
+                    except:
+                        continue
+            random.shuffle(imgs)
+            return {"imagenes": imgs[:cantidad]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/config")
-async def get_config():
+async def get_config(_=Depends(verify_pin)):
     return get_runtime_config()
 
 @router.post("/config")
-async def save_config(data: RuntimeConfig):
+async def save_config(data: RuntimeConfig, _=Depends(verify_pin)):
     save_runtime_config(data.model_dump())
     return {"ok": True}
 

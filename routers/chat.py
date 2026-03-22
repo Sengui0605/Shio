@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 import logging
 import os
@@ -12,6 +12,7 @@ from services.news_service import get_latest_news
 from services.video_service import search_youtube_videos
 from services.rag import search as rag_search, collection as rag_collection
 from database import save_conversation_db, save_message_db, get_messages_db
+from services.auth import verify_pin
 
 log = logging.getLogger("shio")
 router = APIRouter(tags=["Chat"])
@@ -109,7 +110,7 @@ async def _build_context(data):
     return all_msgs, videos_list, search_prefix, messages
 
 @router.post("/chat/stream")
-async def chat_stream(data: ChatRequest):
+async def chat_stream(data: ChatRequest, _=Depends(verify_pin)):
     session_id = data.session_id or str(uuid.uuid4())
     data.session_id = session_id
     messages = await get_messages_db(session_id)
@@ -139,7 +140,7 @@ async def chat_stream(data: ChatRequest):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 @router.post("/chat")
-async def chat_post(data: ChatRequest):
+async def chat_post(data: ChatRequest, _=Depends(verify_pin)):
     session_id = data.session_id or str(uuid.uuid4())
     data.session_id = session_id
     messages = await get_messages_db(session_id)

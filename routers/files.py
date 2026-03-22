@@ -1,9 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 import os
 import uuid
 from services.stt import transcribe_audio
 from services.file_parser import extract_text_from_file
 from services.rag import index_document_async, collection
+from services.auth import verify_pin
 from models.schemas import RagIndexRequest
 
 router = APIRouter(tags=["Files & RAG"])
@@ -12,7 +13,7 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/stt")
-async def stt(file: UploadFile = File(...)):
+async def stt(file: UploadFile = File(...), _=Depends(verify_pin)):
     audio = await file.read()
     if len(audio) > 10_000_000:
         return {"error": "Archivo demasiado grande"}
@@ -29,7 +30,7 @@ async def stt(file: UploadFile = File(...)):
             os.remove(tmp_file)
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), _=Depends(verify_pin)):
     content = await file.read()
     if len(content) > 20_000_000:
         return {"error": "Archivo demasiado grande (max 20MB)"}
@@ -44,7 +45,7 @@ async def upload_file(file: UploadFile = File(...)):
     return {"filename": file.filename, "text": text[:8000], "path": filepath}
 
 @router.post("/rag/index")
-async def rag_index(data: RagIndexRequest):
+async def rag_index(data: RagIndexRequest, _=Depends(verify_pin)):
     if not os.path.isdir(data.folder):
         raise HTTPException(status_code=404, detail="Carpeta no encontrada")
 
@@ -60,6 +61,6 @@ async def rag_index(data: RagIndexRequest):
     return {"ok": True, "files": file_count}
 
 @router.get("/rag/status")
-async def rag_status():
+async def rag_status(_=Depends(verify_pin)):
     count = collection.count()
     return {"chunks": count, "has_index": count > 0}
