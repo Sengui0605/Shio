@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  # ---- Servicio 1: Tu aplicacion ----
+  shio-api:
+    build: .
+    ports:
+      - "7860:7860"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules # Evitar que sobrescriba si existiera
+    environment:
+      - OLLAMA_HOST=https://ollama.com
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  # ---- Servicio 2: Ollama (IA local) ----
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama # Persistir modelos
+    restart: unless-stopped
+    # Si tienes GPU NVIDIA, descomenta:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  ollama_data:

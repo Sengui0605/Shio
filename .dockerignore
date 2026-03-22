@@ -1,0 +1,40 @@
+# Data & uploads locales
+data/
+uploads/
+chroma/
+shio.db
+voz_*.wav
+chat_history.json
+
+# Configuración local con secretos
+shio_config.json
+# shio_runtime_config.json
+.env
+
+# Entornos virtuales y dependencias de python
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de la build de compilación EXE (si queda alguno)
+*.spec
+build/
+dist/
+*.exe
+
+# Node modules si usaste npm (el frontend es puro js y html en static, pero por si acaso)
+node_modules/
+package-lock.json
+package.json
+
+# IDE
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Logs
+*.log
+server_error.log

@@ -1,0 +1,50 @@
+# Secrets
+.env
+MIS_CLAVES_SECRETAS.txt
+
+# Data & uploads
+data/
+uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+
+# Runtime config (contains secrets)
+shio_config.json
+shio_runtime_config.json
+
+# Build artifacts (PyInstaller)
+*.spec
+build/
+dist/
+*.exe
+
+# IDE
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+server_error.log
+
+# Temp files
+voz_*.wav
+chat_history.json
+tmp_*.py
+
+# Legacy
+apps_config.json
+shio_code/
+.env
+shio_runtime_config.json
+static/*.bak
+data/
