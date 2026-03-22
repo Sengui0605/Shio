@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from duckduckgo_search import DDGS
 
 logger = logging.getLogger("shio")
