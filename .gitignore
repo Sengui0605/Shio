@@ -48,3 +48,4 @@ shio_code/
 shio_runtime_config.json
 static/*.bak
 data/
+electron-wrapper/android-studio*.tar.gz
