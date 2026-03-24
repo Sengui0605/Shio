@@ -5,11 +5,11 @@
 
 # ✦ Shio AI
 
-**Asistente de IA modular y open source construido con FastAPI + Ollama**
+**Asistente de IA modular y robusto construido con FastAPI + Ollama**
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://render.com)
 
@@ -21,7 +21,7 @@
 
 ## ¿Qué es Shio?
 
-Shio es un asistente de IA **completo y de código abierto** que puedes desplegar en minutos. Está pensado para que cualquier persona pueda entender cómo funcionan los sistemas de IA modernos — desde el streaming de texto hasta la búsqueda semántica con RAG.
+Shio es un asistente de IA **completo y funcional** que puedes desplegar en minutos. Está pensado para ofrecer una solución robusta que integra los sistemas de IA modernos — desde el streaming de texto hasta la búsqueda semántica con RAG.
 
 No es un wrapper simple de ChatGPT. Es un sistema completo con su propia capa de autenticación, base de datos, búsqueda web, análisis de documentos y frontend.
 
@@ -213,7 +213,7 @@ shio-ai/
 
 ## ☕ Apoya el proyecto
 
-Shio es y seguirá siendo **100% gratuito y open source**.
+Shio es una herramienta profesional de pago diseñada para ofrecer máxima eficiencia.
 
 Si te ayudó a aprender, si lo usas en algún proyecto, o simplemente quieres que siga creciendo con nuevas funcionalidades y tutoriales:
 
@@ -241,7 +241,7 @@ Cada aporte, por pequeño que sea, ayuda a mantener el servidor, dedicar tiempo 
 
 ## 📄 Licencia
 
-MIT — úsalo, modifícalo y distribúyelo libremente. Solo da crédito al proyecto original.
+Proprietaria — Queda prohibida la reproducción, distribución o transmisión de este software sin autorización previa. Consulte el archivo [LICENSE](LICENSE) para más detalles.
 
 ---
 
