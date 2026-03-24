@@ -1,0 +1,22 @@
+{
+  "name": "Shio AI",
+  "short_name": "Shio",
+  "description": "Asistente de IA modular y open source",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#060810",
+  "theme_color": "#9580f2",
+  "icons": [
+    {
+      "src": "/static/shio_icon_256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/shio_icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

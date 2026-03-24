@@ -24,6 +24,10 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 async def read_index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
+@app.get("/app")
+async def read_app():
+    return FileResponse(os.path.join(STATIC_DIR, "app.html"))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
